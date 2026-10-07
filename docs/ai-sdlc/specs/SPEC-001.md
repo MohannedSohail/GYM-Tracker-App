@@ -2,15 +2,14 @@
 
 - **Source Intent**: [intent/gym-workout-logging.md](file:///e:/AI%20Projects/GYM%20Tracker%20App/intent/gym-workout-logging.md)
 - **Author**: Antigravity (Analyst Role)
-- **Approved by**: Human User
-- **Status**: approved
+- **Status**: draft
 
 ---
 
 ## 1. Problem & Context
-Friends training together in the gym (typically 2–3 people) currently log their workouts in generic notes apps. This leads to disorganized logs, confusion over who lifted what weight, difficulty tracking set-by-set reps, and friction during the workout when users are fatigued and hands are sweaty. 
+Friends training together in the gym (typically 2–3 people) currently log their workouts in generic notes apps. This causes confusion, disorganized logs, lost historical weights, and friction during workouts when users are fatigued and hands are sweaty.
 
-The goal of this feature is to provide a dedicated, offline-first Android application on a single shared device to smoothly manage workout sessions, select exercises, log weights (in KG) and reps per round per participant, and review past performance history.
+This feature provides a dedicated, offline-first Android application on a single shared device to manage workout sessions, select exercises with measurable weights, record rounds (weight in KG + reps) per participant with ergonomic fast-adjustment controls, and review past session history organized by session.
 
 ---
 
@@ -18,20 +17,26 @@ The goal of this feature is to provide a dedicated, offline-first Android applic
 - **Target Users**: A group of 2–3 workout partners sharing one smartphone during gym sessions.
 - **In Scope (v1)**:
   - Initial setup and persistent management of participant names.
-  - Pre-populated library of common exercises + custom exercise creation.
+  - Concept of **Session**: training session with date, start time, and end time.
+  - Definition of **Round**: weight in KG (decimals supported, e.g. 22.5) + reps for one person in one exercise.
+  - Pre-populated library of 30 common loadable exercises + custom exercise creation.
   - Active workout session logging: recording round number, weight in KG, and reps for each person.
-  - Ergonomic fast-input controls (`+` / `-` buttons) for weight and reps.
-  - Set editing and deletion during the active session.
-  - Soft-deletion / archiving of participants to maintain historical integrity.
-  - Workout history view showing previous weights and reps per person (structured card/tabular view).
-  - Full offline operation with Room/SQLite.
-  - Arabic primary UI with RTL support and English fallback.
+  - Ergonomic fast-input controls (`+` / `-` 2.5 kg for weight, `+` / `-` 1 for reps, direct numeric tap-and-type).
+  - Pre-filling input from the person's last recorded value for that exercise, with full ability to decrease or increase it.
+  - In-session editing and deletion of recorded rounds.
+  - Soft-deletion / archiving of friends with existing history (hides from active list while preserving all past records in history).
+  - Workout history and reports: simple tabular/card list of dates and numbers per person organized by session.
+  - Local offline storage only (Room SQLite); data lives strictly on device.
+  - Arabic-only UI with full Right-to-Left (RTL) layout.
 - **Out of Scope (Non-goals for v1)**:
-  - Cloud synchronization, user authentication, or backend accounts.
-  - Exercise demonstration videos / animations (scheduled for future releases).
-  - Pre-designed workout programs / splits (scheduled for future releases).
-  - Social media sharing or multi-device peer-to-peer sync.
-  - Complex rest interval timers (deferred to keep v1 scope small and focused).
+  - Charts and graphical analytics (deferred to future releases).
+  - English language support (deferred; Arabic only in v1).
+  - Exercises without weight or measured by time (weight is strictly required for every round).
+  - Cloud synchronization, backend, or user authentication.
+  - Backup and data export (deferred).
+  - Exercise demonstration videos / animations.
+  - Pre-designed workout programs / splits.
+  - Social media sharing.
 
 ---
 
@@ -39,93 +44,126 @@ The goal of this feature is to provide a dedicated, offline-first Android applic
 The local schema consists of:
 
 1. **Participant** (`ParticipantEntity`):
-   - `id`: Long (PK)
+   - `id`: Long (PK autoincrement)
    - `name`: String
    - `isActive`: Boolean (defaults to `true`; set to `false` on soft delete)
    - `createdAt`: Long (epoch ms)
 
 2. **Exercise** (`ExerciseEntity`):
-   - `id`: Long (PK)
-   - `nameAr`: String
-   - `nameEn`: String
-   - `category`: String (e.g., Chest, Back, Legs, Shoulders, Arms, Core)
+   - `id`: Long (PK autoincrement)
+   - `name`: String (Arabic exercise name)
+   - `category`: String (الصدر، الظهر، الأرجل، الأكتاف، البايسبس، الترايسبس، السواعد، الترابيس، البطن)
    - `isCustom`: Boolean
 
 3. **WorkoutSession** (`WorkoutSessionEntity`):
-   - `id`: Long (PK)
+   - `id`: Long (PK autoincrement)
    - `startTime`: Long (epoch ms)
    - `endTime`: Long? (epoch ms, nullable until session ends)
    - `notes`: String?
 
 4. **SessionParticipant** (`SessionParticipantCrossRef`):
-   - `sessionId`: Long (FK)
-   - `participantId`: Long (FK)
+   - `sessionId`: Long (FK -> WorkoutSessionEntity.id)
+   - `participantId`: Long (FK -> ParticipantEntity.id)
 
 5. **SetLog** (`SetLogEntity`):
-   - `id`: Long (PK)
+   - `id`: Long (PK autoincrement)
    - `sessionId`: Long (FK -> WorkoutSessionEntity.id)
    - `exerciseId`: Long (FK -> ExerciseEntity.id)
    - `participantId`: Long (FK -> ParticipantEntity.id)
    - `setNumber`: Int (1-indexed round)
-   - `weightKg`: Double (e.g., 60.0, 62.5)
-   - `reps`: Int (e.g., 10)
+   - `weightKg`: Double (e.g., 22.5, 60.0; supports decimals)
+   - `reps`: Int (integer >= 1)
    - `loggedAt`: Long (epoch ms)
 
 ---
 
-## 4. Functional Requirements
+## 4. Proposed Default Exercises (30 Exercises)
+> **Proposed, pending human approval**  
+> *Traceability*: Traced directly to the author delegation line in [intent/gym-workout-logging.md](file:///e:/AI%20Projects/GYM%20Tracker%20App/intent/gym-workout-logging.md) under `Desired outcome`:
+> *"تفويض المحلل (Analyst) بشكل صريح لاقتراح قائمة تضم 30 تمريناً في المواصفات (SPEC) تغطي المجموعات العضلية التالية: الصدر، الظهر، الأكتاف، الأرجل، البايسبس، الترايسبس، السواعد، الترابيس، والبطن..."*  
+> All 30 proposed exercises are balanced (3 to 4 exercises per muscle group) and require a measurable load (barbell, dumbbell, cable, machine). This list is proposed and not final until human review and approval.
 
-### FR-1: Participant Management
-- **FR-1.1**: On initial app launch, if no active participants exist, prompt the user to input names of the friends group (minimum 1, recommended 2–3).
-- **FR-1.2**: Participant names must persist locally across app restarts.
-- **FR-1.3**: Users can add, edit, or soft-delete (archive) participants. Deleting a participant sets `isActive = false` and preserves all historical logs.
-- **FR-1.4**: Duplicate active participant names or blank/whitespace names must be rejected.
+### 1. الصدر (Chest) - 4 تمارين
+1. **بنش برس بالبار مستوي** (Flat Barbell Bench Press) - بار
+2. **تجميع بالدمبل مائل** (Incline Dumbbell Press) - دمبل
+3. **تفتيح بالكيبل للصدر** (Cable Chest Flyes) - كيبل
+4. **جهاز ضغط الصدر** (Chest Press Machine) - جهاز
 
-### FR-2: Exercise Management
-- **FR-2.1**: The app ships pre-populated with 10 core compound and isolation exercises:
-  1. بنش برس مستوي (Flat Bench Press) - Chest
-  2. بنش مائل دمبل/بار (Incline Press) - Chest
-  3. سكوات (Squat) - Legs
-  4. ديدليفت (Deadlift) - Back/Legs
-  5. ضغط أكتاف بار/دمبل (Overhead Shoulder Press) - Shoulders
-  6. سحب ظهر بار/كيبل (Barbell/Cable Row) - Back
-  7. سحب دمبل فردي (One-Arm Dumbbell Row) - Back
-  8. رفرفة أكتاف جانبي (Dumbbell Lateral Raise) - Shoulders
-  9. تبادل بايسبس (Bicep Curl) - Arms
-  10. دفع ترايسبس كيبل (Tricep Pushdown) - Arms
-- **FR-2.2**: Users can create custom exercises by specifying an exercise name and muscle group category. Blank names are rejected.
+### 2. الظهر (Back) - 4 تمارين
+5. **سحب ظهر بالبار منحني** (Barbell Bent-Over Row) - بار
+6. **سحب ظهر عمودي كيبل** (Lat Pulldown) - كيبل
+7. **سحب دمبل فردي** (One-Arm Dumbbell Row) - دمبل
+8. **سحب أرضي بالكيبل جالس** (Seated Cable Row) - كيبل
 
-### FR-3: Active Workout Session Flow
-- **FR-3.1**: To start a workout, the user selects the active participants for today's session from the active participants list (`isActive == true`).
-- **FR-3.2**: User selects an exercise to perform from the exercise library.
-- **FR-3.3**: The session screen displays logging rows for each selected participant.
-- **FR-3.4**: For each round/set, the user logs `weightKg` and `reps`.
-- **FR-3.5**: Order of entry must be flexible (alternating round-by-round across participants or completing multiple rounds consecutively per person).
-- **FR-3.6**: Users can edit the values of an already recorded set or remove a mistakenly added set during the session.
-- **FR-3.7**: Ending the session timestamps the finish time and saves all sets permanently.
+### 3. الأرجل (Legs) - 4 تمارين
+9. **سكوات بالبار** (Barbell Back Squat) - بار
+10. **جهاز دفع الأرجل** (Leg Press Machine) - جهاز
+11. **ديدليفت روماني بالبار/الدمبل** (Romanian Deadlift) - بار/دمبل
+12. **جهاز مد أو ثني الأرجل** (Leg Extension / Leg Curl Machine) - جهاز
 
-### FR-4: Fast In-Gym Logging UX
-- **FR-4.1**: Weight input must include quick adjustment buttons: `+2.5`, `+5`, `-2.5`, `-5` kg, plus direct numeric input. Weights cannot be negative.
-- **FR-4.2**: Reps input must include quick adjustment buttons: `+1`, `-1`, plus direct numeric input. Reps must be >= 1.
-- **FR-4.3**: When adding a new round for a participant, pre-fill values with their previous round's weight and reps for that exercise.
+### 4. الأكتاف (Shoulders) - 3 تمارين
+13. **ضغط أكتاف بالبار واقف** (Overhead Barbell Shoulder Press) - بار
+14. **ضغط أكتاف بالدمبل جالس** (Seated Dumbbell Shoulder Press) - دمبل
+15. **رفرفة جانبي بالدمبل** (Dumbbell Lateral Raise) - دمبل
 
-### FR-5: Workout History & Progress
-- **FR-5.1**: A dedicated History screen lists past completed sessions chronologically.
-- **FR-5.2**: Inspecting a session reveals the exercises performed, participants present, and all sets (weights in KG and reps) recorded for each person in structured cards/tables.
-- **FR-5.3**: While logging an active exercise, show the last recorded weight/reps for each participant from their previous session on that exercise as a reference target.
+### 5. البايسبس (Biceps) - 3 تمارين
+16. **مرجحة بايسبس بالبار** (Barbell Bicep Curl) - بار
+17. **مرجحة بايسبس تبادل بالدمبل** (Dumbbell Alternating Bicep Curl) - دمبل
+18. **مرجحة هامر بالكيبل بالحبل** (Cable Rope Hammer Curl) - كيبل
 
-### FR-6: Localization & UI Design
-- **FR-6.1**: Primary UI language is Arabic, with right-to-left (RTL) layout support. English fallback strings provided.
-- **FR-6.2**: High-contrast typography and large tap targets suitable for gym environment.
+### 6. الترايسبس (Triceps) - 3 تمارين
+19. **دفع ترايسبس بالكيبل بالحبل** (Cable Rope Tricep Pushdown) - كيبل
+20. **كسر الجمجمة بالبار EZ** (EZ-Bar Skull Crusher) - بار
+21. **ضغط ترايسبس بالدمبل فوق الرأس** (Overhead Dumbbell Triceps Extension) - دمبل
+
+### 7. السواعد (Forearms) - 3 تمارين
+22. **ثني المعصم بالبار جالس** (Seated Barbell Wrist Curl) - بار
+23. **ثني المعصم العكسي بالبار أو الكيبل** (Reverse Barbell/Cable Wrist Curl) - بار/كيبل
+24. **مرجحة معصم بالدمبل فردي** (One-Arm Dumbbell Wrist Curl) - دمبل
+
+### 8. الترابيس (Traps) - 3 تمارين
+25. **هزات أكتاف بالبار** (Barbell Shrugs) - بار
+26. **هزات أكتاف بالدمبل** (Dumbbell Shrugs) - دمبل
+27. **هزات أكتاف بالكيبل** (Cable Shrugs) - كيبل
+
+### 9. البطن (Abs) - 3 تمارين
+28. **طحن البطن بالكيبل جالس** (Cable Kneeling Crunch) - كيبل
+29. **جهاز طحن البطن بالأوزان** (Machine Loaded Crunch) - جهاز
+30. **دوران الجذع بالكيبل** (Cable Woodchopper / Loaded Rotation) - كيبل
 
 ---
 
-## 5. Non-Functional Requirements (NFR)
-- **NFR-1 (Offline-First)**: Zero network dependency; all operations execute against local Room database.
-- **NFR-2 (Data Durability)**: Every set logged is committed to local storage immediately, preventing data loss if the app process is terminated.
-- **NFR-3 (Process Death Recovery)**: If an active session is interrupted, reopening the app restores the active session state and all completed sets.
-- **NFR-4 (Performance)**: UI interactions (incrementing/decrementing sets) must render under 16ms with zero noticeable frame drops.
-- **NFR-5 (Architecture & Standards)**: Kotlin, Jetpack Compose (Material 3), MVVM (`ViewModel` + `StateFlow`), Room ORM, JUnit 4/5 unit tests.
+## 5. Functional Requirements
+
+### FR-1: Participant Management
+- **FR-1.1**: On initial app launch, prompt to enter participant names (minimum 1, recommended 2–3).
+- **FR-1.2**: Participant names persist locally across app restarts.
+- **FR-1.3**: Friends can be edited or deleted. If a friend has logged rounds, deletion must perform a **Soft Delete** (`isActive = false`), hiding them from the active selector while retaining all historical session logs.
+- **FR-1.4**: Blank, whitespace-only, or duplicate active participant names are rejected.
+
+### FR-2: Exercise Management
+- **FR-2.1**: App ships pre-populated with the 30 default loadable exercises (Section 4) once approved.
+- **FR-2.2**: Users can create custom exercises specifying an Arabic name and a muscle category. All exercises must have loadable weights; bodyweight-only or time-based exercises are disallowed.
+
+### FR-3: Session & Round Logging Flow
+- **FR-3.1**: A **Session** represents a workout session having a start timestamp, end timestamp, and a set of participating friends.
+- **FR-3.2**: A **Round** consists of: `weightKg` (decimal supported) + `reps` (integer >= 1) for one person in one exercise. Weight is mandatory.
+- **FR-3.3**: Flexible turn order: participants can alternate sets round-by-round, or one participant can log multiple sets consecutively.
+- **FR-3.4**: Users can edit recorded rounds or delete mistakenly added rounds in the active session.
+- **FR-3.5**: Finishing the workout session records `endTime` and closes the session.
+
+### FR-4: Fast In-Gym Logging UX
+- **FR-4.1**: Input for each participant and exercise starts pre-filled from their **last recorded value** for that exercise, with full freedom to increase or decrease the value.
+- **FR-4.2**: Weight step controls: `+2.5` and `-2.5` kg buttons. Tapping the numeric value allows direct keyboard entry of exact decimals (e.g. 22.5).
+- **FR-4.3**: Reps step controls: `+1` and `-1` buttons, with direct numeric keyboard entry.
+
+### FR-5: Workout History & Reports
+- **FR-5.1**: History is structured and organized strictly by **Session**.
+- **FR-5.2**: Displayed as a clean tabular/card list of dates, participants, exercises, weights (KG), and reps.
+
+### FR-6: Localization & Platform
+- **FR-6.1**: Arabic-only user interface with full Right-to-Left (RTL) layout.
+- **FR-6.2**: Data lives exclusively on the local device using Room SQLite.
 
 ---
 
@@ -134,7 +172,7 @@ The local schema consists of:
 ### AC-1: Initial Participant Setup
 - **Given** an empty database on first launch,
 - **When** the user enters names "أحمد" and "محمد" and saves,
-- **Then** both participants are stored in the database with `isActive = true` and appear in the participants list.
+- **Then** both participants are stored in the database with `isActive = true` and appear in the active participants list.
 
 ### AC-2: Participant Name Persistence
 - **Given** participants "أحمد" and "محمد" already exist,
@@ -143,7 +181,7 @@ The local schema consists of:
 
 ### AC-3: Custom Exercise Creation
 - **Given** the pre-populated exercise catalog,
-- **When** the user creates a new exercise "سحب ظهر واسع" under category "Back",
+- **When** the user creates a new exercise "سحب ظهر واسع" under category "الظهر",
 - **Then** the new exercise is saved with `isCustom = true` and appears in exercise selection.
 
 ### AC-4: Workout Session Initialization
@@ -151,62 +189,70 @@ The local schema consists of:
 - **When** the user starts a session selecting only A and B,
 - **Then** a new `WorkoutSession` is created with current timestamp, associated only with A and B.
 
-### AC-5: Set Logging with KG and Reps
-- **Given** an active session with participants A and B on exercise "بنش برس",
-- **When** set 1 is logged for participant A with 60.0 kg and 10 reps,
-- **Then** a `SetLog` record is stored with `setNumber = 1`, `weightKg = 60.0`, `reps = 10`, linked to participant A, the exercise, and the active session.
+### AC-5: Round Logging with Decimal KG & Reps
+- **Given** an active session with participant A on exercise "بنش برس بالبار مستوي",
+- **When** set 1 is logged for participant A with 22.5 kg and 10 reps,
+- **Then** a `SetLog` record is stored with `setNumber = 1`, `weightKg = 22.5`, `reps = 10`, linked to participant A, the exercise, and the session.
 
-### AC-6: Fast Step Controls
-- **Given** a set row with weight 60.0 kg and 10 reps,
-- **When** the user taps `+2.5` for weight and `+1` for reps,
-- **Then** the displayed and stored values update to 62.5 kg and 11 reps.
+### AC-6: Fast Step Controls (+/- 2.5 kg for Weight, +/- 1 for Reps)
+- **Given** a set entry row with current weight 20.0 kg and 10 reps,
+- **When** the user taps `+2.5` on weight and `+1` on reps,
+- **Then** the displayed weight increments to 22.5 kg and reps increment to 11; and tapping `-2.5` on weight decrements it back to 20.0 kg.
 
-### AC-7: Previous Set Pre-fill
-- **Given** participant A has completed set 1 at 70.0 kg and 8 reps,
-- **When** the user adds set 2 for participant A in the same exercise,
-- **Then** the initial values for set 2 default to 70.0 kg and 8 reps.
+### AC-7: Direct Numeric Keyboard Input for Decimal Weights
+- **Given** a set entry row with weight 20.0 kg,
+- **When** the user taps the weight display value and types "22.5" on the numeric keypad,
+- **Then** the input accepts the decimal string and parses it to 22.5 kg without requiring step-button clicks.
 
-### AC-8: Historical Performance Lookup
-- **Given** a past session where participant A logged 80.0 kg x 6 reps on "سكوات",
-- **When** the user starts a new session with "سكوات" for participant A,
-- **Then** the UI displays the previous best/last performance (80.0 kg x 6 reps) as reference.
+### AC-8: Previous Set Pre-fill and Decrement Capability
+- **Given** participant A has recorded a previous round or previous session with 60.0 kg and 10 reps on "سكوات بالبار",
+- **When** participant A opens that exercise for a new round,
+- **Then** the initial fields pre-fill automatically with 60.0 kg and 10 reps, and the user can decrement the pre-filled weight (e.g. to 57.5 kg) using the `-2.5` button.
 
-### AC-9: Session Completion
+### AC-9: Historical Performance Lookup by Session
+- **Given** a completed past session where participant A logged 80.0 kg x 6 reps on "سكوات بالبار",
+- **When** the user inspects that session in History,
+- **Then** the session card shows the date, participants, exercise, and the recorded 80.0 kg x 6 reps in a structured table.
+
+### AC-10: Session Completion
 - **Given** an active workout session with multiple logged sets,
-- **When** the user taps "Finish Workout",
+- **When** the user taps "إنهاء التمرين" (Finish Workout),
 - **Then** the session's `endTime` is updated and the session transitions to completed status.
 
-### AC-10: Input Validation for Weight and Reps
+### AC-11: Input Validation for Weight and Reps
 - **Given** an active set entry row,
-- **When** a user attempts to enter negative weight (`weightKg < 0`) or non-positive reps (`reps <= 0`),
-- **Then** the system rejects the input or clamps it to the minimum allowed value (0 kg, 1 rep) and does not persist an invalid set.
+- **When** a user attempts to enter a non-positive weight (`weightKg <= 0.0`), a non-numeric string, or non-positive reps (`reps <= 0`),
+- **Then** the system rejects the input or clamps it to the minimum allowed value (0.5 kg, 1 rep) and does not persist an invalid set.
 
-### AC-11: Input Validation for Names
+### AC-12: Input Validation for Names
 - **Given** the participant creation or exercise creation dialog,
 - **When** the user attempts to save an empty string or whitespace-only name,
 - **Then** the operation is rejected with a validation error and no database record is created.
 
-### AC-12: Soft Deletion of Participant with Existing History
-- **Given** participant A has 10 recorded sets in past sessions,
-- **When** the user deletes participant A,
-- **Then** participant A's record has `isActive` set to `false`, all historical `SetLog` entries remain intact, and participant A is excluded from the new session participant selector.
+### AC-13: Soft Deletion of Participant with Existing History
+- **Given** participant "أحمد" has recorded rounds in past sessions,
+- **When** the user deletes "أحمد",
+- **Then** "أحمد" does not appear in the participant selection list for starting new sessions, AND all of "أحمد"'s past sessions, rounds, and weights remain fully visible under his name in the History screen.
 
-### AC-13: In-Session Set Modification and Deletion
-- **Given** an active session with set 1 recorded for participant A (50.0 kg, 10 reps),
-- **When** the user modifies set 1 to 55.0 kg or deletes set 1,
+### AC-14: In-Session Round Modification and Deletion
+- **Given** an active session with round 1 recorded for participant A (50.0 kg, 10 reps),
+- **When** the user modifies round 1 to 52.5 kg or deletes round 1,
 - **Then** the `SetLog` record is updated in the database accordingly or deleted, and round numbers re-index cleanly.
 
-### AC-14: Active Session Recovery After App Restart
-- **Given** an ongoing session with 3 logged sets that has not been explicitly finished,
+### AC-15: Active Session Recovery After App Restart
+- **Given** an ongoing session with logged sets that has not been explicitly finished,
 - **When** the app process is terminated and reopened,
 - **Then** the app identifies the unclosed session, restores its state, and displays the previously recorded sets.
 
----
-
-## 7. Resolved Design Decisions
-1. **Reporting & Comparisons View (v1)**: Confirmed as structured chronological cards/tables per participant per exercise. Graphical chart analytics deferred to v2.
-2. **Pre-loaded Exercise Catalog**: Confirmed with 10 core compound and isolation exercises covering Chest, Back, Legs, Shoulders, and Arms.
-3. **Rest Timer**: Excluded from v1 to keep scope minimal and focused; direct manual flow prioritized.
+### AC-16: Session-Organized Tabular History View
+- **Given** multiple past completed sessions,
+- **When** navigating to the History screen,
+- **Then** sessions are listed chronologically as cards/tables showing session date, start/end time, participating friends, and their respective weights (KG) and reps per exercise.
 
 ---
-Status: approved
+
+## 7. Open Questions
+- None.
+
+---
+Status: draft
