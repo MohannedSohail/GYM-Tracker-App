@@ -2,7 +2,8 @@
 
 - **Source Intent**: [intent/gym-workout-logging.md](file:///e:/AI%20Projects/GYM%20Tracker%20App/intent/gym-workout-logging.md)
 - **Author**: Antigravity (Analyst Role)
-- **Status**: draft
+- **Approved by**: Human User
+- **Status**: approved
 
 ---
 
@@ -18,7 +19,7 @@ This feature provides a dedicated, offline-first Android application on a single
 - **In Scope (v1)**:
   - Initial setup and persistent management of participant names.
   - Concept of **Session**: training session with date, start time, and end time.
-  - Definition of **Round**: weight in KG (decimals supported, e.g. 22.5) + reps for one person in one exercise.
+  - Definition of **Round**: weiArabic Shared Workout Trackerght in KG (decimals supported, e.g. 22.5) + reps for one person in one exercise.
   - Pre-populated library of 30 common loadable exercises + custom exercise creation.
   - Active workout session logging: recording round number, weight in KG, and reps for each person.
   - Ergonomic fast-input controls (`+` / `-` 2.5 kg for weight, `+` / `-` 1 for reps, direct numeric tap-and-type).
@@ -255,4 +256,4 @@ The local schema consists of:
 - None.
 
 ---
-Status: draft
+Status: approved

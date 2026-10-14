@@ -1,6 +1,7 @@
 # ADR-001: Selection of Room ORM for Local Persistence
 
-- **Status**: Proposed (Pending Human Approval)
+- **Status**: Approved
+- **Approved by**: Human User
 - **Date**: 2026-10-05
 - **Deciders**: Human Project Owner, Antigravity (Architect Role)
 - **Technical Context**: SPEC-001 Gym Workout Logging

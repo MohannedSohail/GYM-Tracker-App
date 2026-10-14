@@ -1,8 +1,10 @@
 # Architectural Plan: SPEC-001 Gym Workout Logging
 
 - **Spec Reference**: [docs/ai-sdlc/specs/SPEC-001.md](file:///e:/AI%20Projects/GYM%20Tracker%20App/docs/ai-sdlc/specs/SPEC-001.md)
+- **Design Reference**: [docs/ai-sdlc/design/DESIGN.md](file:///e:/AI%20Projects/GYM%20Tracker%20App/docs/ai-sdlc/design/DESIGN.md)
 - **Role**: Software Architect
-- **Status**: draft
+- **Approved by**: Human User
+- **Status**: approved
 
 ---
 
@@ -129,4 +131,4 @@ erDiagram
 Revert Git commits to return to clean state. Room schema uses `fallbackToDestructiveMigration()` during initial development.
 
 ---
-Status: draft
+Status: approved

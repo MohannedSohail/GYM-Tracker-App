@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Terra Design System Color Tokens -->
+    <color name="primary">#4A7C59</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#CDEBD3</color>
+    <color name="on_primary_container">#12331F</color>
+    <color name="secondary">#6E655A</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#EAE2D8</color>
+    <color name="on_secondary_container">#2A231B</color>
+    <color name="tertiary">#C9A962</color>
+    <color name="on_tertiary">#3A2D0C</color>
+    <color name="tertiary_container">#F4E7C5</color>
+    <color name="background">#F7F6F2</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#EDEEE8</color>
+    <color name="outline">#D9DBD2</color>
+    <color name="on_surface">#1B2420</color>
+    <color name="on_surface_variant">#5A645E</color>
+    <color name="error">#BA3B2E</color>
+    <color name="error_container">#FBE6E2</color>
 </resources>

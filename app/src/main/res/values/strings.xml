@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">GymApp</string>
+    <string name="app_name">جيم</string>
+    <string name="app_tagline">تسجيل تمارين الجيم المشتركة</string>
 </resources>
